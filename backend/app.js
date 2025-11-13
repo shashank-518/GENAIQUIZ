@@ -99,7 +99,7 @@ Requirements:
 
 try {
     const response = await generateWithFallback(prompt);
-    const clean = result.response
+    const clean = response.response
       .text()
       .replace(/```json|```/g, "")
       .trim();
