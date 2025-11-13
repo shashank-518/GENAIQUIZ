@@ -7,7 +7,13 @@ import dotenv from "dotenv";
 const app = express();
 dotenv.config();
 
-app.use(cors({ origin: process.env.DOMAIN}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+)
 
 app.use(bodyParser.json());
 
