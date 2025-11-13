@@ -18,7 +18,32 @@ app.use(
 app.use(bodyParser.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const MODEL_FALLBACKS = [
+  "gemini-2.5-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  "gemini-2.0-flash",
+];
+
+async function generateWithFallback(prompt) {
+  let lastError = null;
+  for (const modelName of MODEL_FALLBACKS) {
+    try {
+      console.log(`⚡ Trying model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = result.response.text();
+      console.log(`✅ Success with model: ${modelName}`);
+      return response;
+    } catch (error) {
+      console.error(`❌ Failed with ${modelName}: ${error.message}`);
+      lastError = error;
+      // Wait a bit before next model to avoid throttling
+      await new Promise((res) => setTimeout(res, 800));
+    }
+  }
+  throw lastError;
+}
 
 app.get("/home", (req, res) => {
   res.json({
@@ -72,12 +97,19 @@ Requirements:
 - Make sure JSON is valid and strictly follows the given structure.
 `;
 
-    const result = await model.generateContent(prompt);
+try {
+    const response = await generateWithFallback(prompt);
     const clean = result.response
       .text()
       .replace(/```json|```/g, "")
       .trim();
     res.json(JSON.parse(clean));
+  } catch (error) {
+    console.error("🔥 All models failed:", error);
+    res.status(500).json({ error: "All Gemini models are currently unavailable. Please try again later." });
+  }
+
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate data" });
