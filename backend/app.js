@@ -98,11 +98,8 @@ Requirements:
 `;
 
 try {
-    const response = await generateWithFallback(prompt);
-    const clean = response.response
-      .text()
-      .replace(/```json|```/g, "")
-      .trim();
+    const rawText = await generateWithFallback(prompt);
+    const clean = rawText.replace(/```json|```/g, "").trim();
     res.json(JSON.parse(clean));
   } catch (error) {
     console.error("🔥 All models failed:", error);
